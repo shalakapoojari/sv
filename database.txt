@@ -1,0 +1,102 @@
+CREATE DATABASE IF NOT EXISTS employee_portal;
+USE employee_portal;
+
+CREATE TABLE admins (
+    id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    emp_id VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE admin_activity (
+    activity_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    admin_id VARCHAR(20) NOT NULL,
+    login_time TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    logout_time TIMESTAMP NULL
+);
+
+CREATE TABLE employees (
+    id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    emp_id VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    otp VARCHAR(10),
+    otp_generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(255),
+    name VARCHAR(100) NOT NULL,
+    phoneno VARCHAR(15) NOT NULL,
+    designation VARCHAR(100) NOT NULL,
+    bloodgrp VARCHAR(10),
+    doi VARCHAR(20),
+    form_status TINYINT(1) DEFAULT 1,
+    idcard LONGBLOB
+);
+
+CREATE TABLE form_responses (
+    id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    emp_id VARCHAR(20) NOT NULL,
+    response TEXT NOT NULL,
+    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE form_submissions (
+    submission_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    emp_id VARCHAR(20) NOT NULL,
+    month VARCHAR(20) NOT NULL,
+    submission_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX (emp_id)
+);
+
+CREATE TABLE form_visibility (
+    id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    is_visible TINYINT(1) DEFAULT 1
+);
+
+CREATE TABLE google_form_response (
+    id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    emp_id VARCHAR(10),
+    phoneno VARCHAR(20) NOT NULL,
+    company_contact VARCHAR(20),
+    portfolio_name VARCHAR(255) NOT NULL,
+    designation VARCHAR(255) NOT NULL,
+    doi DATE NOT NULL,
+    manager_name VARCHAR(255) NOT NULL,
+    supervisor_name VARCHAR(255) NOT NULL,
+    telecaller_name VARCHAR(255) NOT NULL,
+    allocation_count INT NOT NULL,
+    total_calls INT NOT NULL,
+    monthly_collection VARCHAR(100),
+    bank_id VARCHAR(100),
+    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    month_of_submission VARCHAR(20),
+    INDEX (submitted_at)
+);
+
+CREATE TABLE login_activity (
+    activity_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    emp_id VARCHAR(20) NOT NULL,
+    email VARCHAR(100) NOT NULL,
+    login_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    logout_time TIMESTAMP
+);
+
+CREATE TABLE login_records (
+    id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    emp_id VARCHAR(50) NOT NULL,
+    email VARCHAR(100) NOT NULL,
+    login_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX (emp_id)
+);
+
+CREATE TABLE cars (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    reg_no VARCHAR(50) NOT NULL UNIQUE,
+    owner VARCHAR(100) NOT NULL,
+    chassis_no VARCHAR(100),
+    eng_no VARCHAR(100),
+    model VARCHAR(100),
+    financer VARCHAR(100),
+    bkt VARCHAR(50),
+    arg_number_loan VARCHAR(100),
+    manager_name VARCHAR(100),
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

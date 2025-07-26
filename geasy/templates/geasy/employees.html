@@ -1,0 +1,138 @@
+{% extends 'geasy/navbar.html' %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='geasy/css/styles.css') }}">
+<title>Total Employees</title>
+
+<div class="container">
+    <div class="card fade-in" style="max-width: 1400px; margin: 0 auto;">
+
+        <div class="search-container">
+            <p class='card-title'>Search Employees:</p>
+            <input type="text" id="employee-search" class="form-input search-input" 
+                placeholder="Enter name or login ID...">
+        </div>
+
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Login ID</th>
+                        <th>Password</th>
+                        <th>Name</th>
+                        <th>Address</th>
+                        <th>Mobile</th>
+                        <th>Recharge Date</th>
+                        <th>Recharge Expiry</th>
+                        <th>Status</th>
+                        <th>Type</th>
+                        <th>Actions</th>
+                        <th>Recharge
+                    </tr>
+                </thead>
+                <tbody id="employee-table-body">
+                    {% for emp in employees %}
+                    <tr>
+                        <td>{{ emp.login_id }}</td>
+                        <td>{{ emp.password }}</td>
+                        <td>{{ emp.name }}</td>
+                        <td>{{ emp.address }}</td>
+                        <td>{{ emp.mobile }}, {{emp.mobile2 or ''}}</td>
+                        <td>{{ emp.recharge_date or '-'}}</td>
+                        <td>{{ emp.recharge_expiry or '-'}}</td>
+                        <td>
+                            <span class="status-badge {% if emp.status == 'active' %}status-active{% else %}status-inactive{% endif %}">
+                                {{ emp.status }}
+                            </span>
+                        </td>
+                        <td>{{ emp.role }}</td>
+                        <td>
+                            <div class="actions-group">
+                                <a href="{{ url_for('geasy_bp.edit_employee', login_id=emp.login_id) }}" class="btn btn-warning btn-sm" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form action="{{ url_for('geasy_bp.delete_employee', user_id=emp.login_id) }}" method="POST" style="display:inline;">
+                                    <button type="submit" class="btn btn-danger btn-sm" title="Delete" onclick="return confirm('Are you sure?')">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                        <td>
+                            <button class="btn btn-primary btn-sm" onclick="#">
+                                Recharge
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center">No employees found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Client-side search functionality
+    $('#employee-search').on('input', function() {
+        const searchTerm = $(this).val().toLowerCase();
+        
+        if(searchTerm.length >= 2) { // Only search after 2 characters
+            $.ajax({
+                url: "{{ url_for('geasy_bp.manage_employees_data') }}",
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({ search: searchTerm }),
+                success: function(response) {
+                    const tableBody = $('#employee-table-body');
+                    tableBody.empty();
+                    
+                    if(response.length === 0) {
+                        tableBody.append('<tr><td colspan="8" class="text-center">No matching employees found</td></tr>');
+                        return;
+                    }
+                    
+                    response.forEach(function(emp) {
+                        const statusClass = emp.status === 'active' ? 'status-active' : 'status-inactive';
+                        const row = `
+                            <tr>
+                                <td>${emp.id}</td>
+                                <td>${emp.login_id}</td>
+                                <td>${emp.name}</td>
+                                <td>${emp.password}</td>
+                                <td>${emp.mobile}</td>
+                                <td>${emp.mobile2 || '—'}</td>
+                                <td><span class="status-badge ${statusClass}">${emp.status}</span></td>
+                                <td>
+                                    <div class="actions-group">
+                                        <a href="/geasy/manage/employees/edit/${emp.login_id}" class="btn btn-warning btn-sm" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <form action="/manage/employee/delete/${emp.login_id}" method="POST" style="display:inline;">
+                                            <button type="submit" class="btn btn-danger btn-sm" title="Delete" onclick="return confirm('Are you sure?')">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                        tableBody.append(row);
+                    });
+                }
+            });
+        } else if(searchTerm.length === 0) {
+            // Reload original data if search is cleared
+            location.reload();
+        }
+    });
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Employee Details</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='geasy/css/styles.css') }}">
+</head>
+<body>
+
+<div class="container">
+    <h2>Edit Employee</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST">
+        <div class="form-row">
+            <label for="login_id">Login ID *</label>
+            <input type="text" id="login_id" name="login_id" value="{{ user.login_id }}">
+        </div>
+
+        <div class="form-row">
+            <label for="password">Password *</label>
+            <input type="text" id="password" name="password" value="{{ user.password or '' }}" required>
+        </div>
+
+        <div class="form-row">
+            <label for="name">Full Name *</label>
+            <input type="text" id="name" name="name" value="{{ user.name or '' }}" required>
+        </div>
+
+        <div class="form-row">
+            <label for="mobile">Mobile *</label>
+            <input type="text" id="mobile" name="mobile" value="{{ user.mobile or '' }}" required>
+        </div>
+
+        <div class="form-row">
+            <label for="mobile2">Mobile 2</label>
+            <input type="text" id="mobile2" name="mobile2" value="{{ user.mobile2 or '' }}">
+        </div>
+        
+        <div class="form-row">
+            <label for="status">Status</label>
+            <select name="status" id="status" required>
+                <option value="active" {% if user.status == 'active' %}selected{% endif %}>Active</option>
+                <option value="inactive" {% if user.status == 'inactive' %}selected{% endif %}>Inactive</option>
+            </select>
+        </div>
+
+        <div class="form-row">
+            <label for="role">Role </label>
+            <select name="role" id="role" required>
+                <option value="Admin" {% if user.role == 'Admin' %}selected{% endif %}>Admin</option>
+                <option value="User" {% if user.role == 'User' %}selected{% endif %}>User</option>
+            </select>
+        </div>
+
+        <div class="form-actions" style="margin-top: 20px;">
+            <button type="submit" class="btn btn-success">Update</button>
+            <a href="{{ url_for('geasy_bp.manage_employees') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+</body>
+</html>

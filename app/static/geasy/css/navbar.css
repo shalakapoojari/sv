@@ -1,0 +1,335 @@
+/* Import Poppins font */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background: transparent;
+    color: #333;
+    padding-top: 60px; /* Space for fixed navbar */
+}
+
+/* Top Navigation Bar */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    padding: 0 2rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Logo */
+.logo {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #1f2937;
+    text-decoration: none;
+    margin-right: 3rem;
+    letter-spacing: -0.025em;
+    transition: all 0.2s ease;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.logo::before {
+    content: '';
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    border-radius: 8px;
+    margin-right: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.logo::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 42px;
+    width: 0;
+    height: 1px;
+    background: #1f2937;
+    transition: width 0.3s ease;
+}
+
+.logo:hover {
+    color: #10b981;
+}
+
+.logo:hover::after {
+    width: calc(100% - 42px);
+}
+
+/* Navigation Links Container */
+.nav-links {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    flex: 1;
+    gap: 0;
+}
+
+/* Main Navigation Items */
+.nav-links > li {
+    position: relative;
+}
+
+.nav-links > li > a {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1.25rem;
+    color: #6b7280;
+    text-decoration: none;
+    font-weight: 400;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+    position: relative;
+    white-space: nowrap;
+    border-bottom: 1px solid transparent;
+    height: 60px;
+}
+
+.nav-links > li > a:hover,
+.nav-links > li > a.active {
+    color: #1f2937;
+    border-bottom-color: #1f2937;
+}
+
+/* Dropdown Submenu */
+.submenu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    list-style: none;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 0.5rem 0;
+    min-width: 220px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    z-index: 1001;
+}
+
+.nav-links > li:hover .submenu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.submenu li {
+    margin: 0;
+}
+
+.submenu li a {
+    display: block;
+    padding: 0.75rem 1.25rem;
+    color: #6b7280;
+    text-decoration: none;
+    font-weight: 400;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+}
+
+.submenu li a:hover {
+    color: #1f2937;
+    background: #f9fafb;
+    border-left-color: #1f2937;
+}
+
+/* Right side items (Info, Logout) */
+.nav-links > li:nth-last-child(-n+2) {
+    margin-left: auto;
+}
+
+.nav-links > li:nth-last-child(-n+2):first-of-type {
+    margin-left: auto;
+}
+
+/* Special styling for logout */
+.nav-links > li:last-child > a {
+    color: #ef4444;
+    background: #fef2f2;
+    border: 1px solid #fee2e2;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    margin-left: 1rem;
+    height: auto;
+    border-bottom: 1px solid #fee2e2;
+}
+
+.nav-links > li:last-child > a:hover {
+    background: #fecaca;
+    color: #dc2626;
+    border-color: #fca5a5;
+}
+
+/* Main Content Area */
+.content {
+    padding: 0.2rem;
+    min-height: calc(100vh - 60px);
+    background: transparent;
+}
+
+/* Flash Messages */
+.flashes {
+    margin-bottom: 2rem;
+}
+
+.alert {
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+    border-radius: 8px;
+    font-weight: 400;
+    border: 1px solid;
+    font-size: 0.875rem;
+}
+
+.alert-success {
+    background: #f0fdf4;
+    color: #15803d;
+    border-color: #bbf7d0;
+}
+
+.alert-error {
+    background: #fef2f2;
+    color: #dc2626;
+    border-color: #fecaca;
+}
+
+.alert-warning {
+    background: #fffbeb;
+    color: #d97706;
+    border-color: #fed7aa;
+}
+
+.alert-info {
+    background: #eff6ff;
+    color: #2563eb;
+    border-color: #bfdbfe;
+}
+
+/* Mobile Responsive */
+@media (max-width: 1024px) {
+    .nav-links {
+        gap: 0;
+    }
+    
+    .nav-links > li > a {
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+        height: 60px;
+    }
+    
+    .logo {
+        margin-right: 2rem;
+        font-size: 1.25rem;
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        padding-top: 50px;
+    }
+    
+    .sidebar {
+        height: 50px;
+        padding: 0 1rem;
+        overflow-x: auto;
+        overflow-y: hidden;
+    }
+    
+    .nav-links {
+        gap: 0;
+        flex-wrap: nowrap;
+        width: max-content;
+    }
+    
+    .nav-links > li > a {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.8rem;
+        height: 50px;
+    }
+    
+    .logo {
+        margin-right: 1rem;
+        font-size: 1.1rem;
+    }
+    
+    .logo::before {
+        width: 24px;
+        height: 24px;
+        margin-right: 0.5rem;
+    }
+    
+    .submenu {
+        position: fixed;
+        top: 50px;
+        left: 0;
+        right: 0;
+        min-width: 100%;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+    }
+    
+    .content {
+        padding: 0.2rem;
+    }
+}
+
+/* Hover indicator for items with submenus */
+.nav-links > li:has(.submenu) > a::after {
+    content: '▾';
+    margin-left: 0.5rem;
+    font-size: 0.7rem;
+    transition: transform 0.2s ease;
+    color: #9ca3af;
+}
+
+.nav-links > li:hover:has(.submenu) > a::after {
+    transform: rotate(180deg);
+    color: #1f2937;
+}
+
+/* Active state for main navigation */
+.nav-links > li > a.active {
+    font-weight: 500;
+}
+
+/* Smooth scroll for horizontal overflow on mobile */
+.sidebar::-webkit-scrollbar {
+    height: 2px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: #f3f4f6;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 1px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}

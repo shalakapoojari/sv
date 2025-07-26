@@ -1,0 +1,514 @@
+{% extends 'geasy/navbar.html' %}
+{% block content %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Approve Pending Users</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='geasy/css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
+</head>
+<body>
+    <div class="container">
+        <div class="card fade-in">
+            <div class="card-header">
+                <h1 class="card-title">Approve Pending Users</h1>
+                <p class="card-subtitle">Review and approve user registration requests</p>
+            </div>
+            <div class="card-body">
+                <div class="search-container">
+                    <p>Filter by Status:</p>
+                    <select id="statusFilter" class="form-select">
+                        <option value="">All Statuses</option>
+                        <option value="pending" {% if filter_status == 'pending' %}selected{% endif %}>Pending</option>
+                        <option value="viewed" {% if filter_status == 'viewed' %}selected{% endif %}>Viewed</option>
+                        <option value="on hold" {% if filter_status == 'on hold' %}selected{% endif %}>On Hold</option>
+                        <option value="rejected" {% if filter_status == 'rejected' %}selected{% endif %}>Rejected</option>
+                    </select>
+
+                    <p>Search:</p>
+                    <input type="text" id="searchInput" value="{{ search }}" placeholder="Search by name, email or login ID" class="form-input search-input">
+                    
+                </div>
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Mobile</th>
+                                <th>Mobile 2</th>
+                                <th>Machine ID</th>
+                                <th>Email</th>
+                                <th>State</th>
+                                <th>City</th>
+                                <th>Date</th>
+                                <th>Remarks</th>
+                                <th>Add</th>
+                                <th>Update Status</th>
+                                <th>View location</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            {% for u in users %}
+                            <tr data-name="{{ u.name|lower }}" data-email="{{ u.email|lower }}" data-login-id="{{ u.login_id|lower }}" data-status="{{ u.status|lower }}">
+                                <td>{{ u.login_id }}</td>
+                                <td>{{ u.name }}</td>
+                                <td>{{ u.mobile }}</td>
+                                <td>{{ u.mobile2 }}</td>
+                                <td>{{ u.machine_id }}</td>
+                                <td>{{ u.email }}</td>
+                                <td>{{ u.state }}</td>
+                                <td>{{ u.city }}</td>
+                                <td>{{ u.date }}</td>
+                                <td>{{ u.remark }}</td>
+                                <td>
+                                    <button class="btn btn-primary btn-sm approve-btn"
+                                        data-user-id="{{ u.id }}"
+                                        data-login-id="{{ u.login_id }}"
+                                        data-name="{{ u.name }}"
+                                        data-mobile="{{ u.mobile }}"
+                                        data-city="{{ u.city }}"
+                                        data-state="{{ u.state }}"
+                                        data-status="{{ u.status }}">
+                                        <i class="bi bi-check-circle"></i> Approve
+                                    </button>
+                                </td>
+                                <td>
+                                    <button class="btn btn-secondary btn-sm update-status-btn"
+                                        data-user-id="{{ u.id }}"
+                                        data-name="{{ u.name }}"
+                                        data-mobile="{{ u.mobile }}"
+                                        data-mobile2="{{ u.mobile2 }}"
+                                        data-address="{{ u.city }}, {{ u.state }}"
+                                        data-current-status="{{ u.status }}">
+                                        <i class="bi bi-pencil-square"></i> Status
+                                    </button>
+                                </td>
+                                <td>
+                                    {% if u.location %}
+                                    <button class="btn btn-primary btn-sm view-location-btn"
+                                        data-user-id="{{ u.id }}">
+                                        <i class="bi bi-geo-alt"></i> Location
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr id="noResultsRow">
+                                <td colspan="13" class="empty-state">No pending requests found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Approve User Modal -->
+    <div class="modal" id="approveModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5>Approve User</h5>
+                <span class="close" onclick="closeModal('approveModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="approveForm">
+                    <input type="hidden" id="pending_id" name="pending_id">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Login ID *</label>
+                            <input type="text" class="form-input" id="approve_login_id" name="login_id" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Name</label>
+                            <input type="text" class="form-input" id="modal_name" readonly>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Mobile</label>
+                            <input type="text" class="form-input" id="modal_mobile" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">City/State</label>
+                            <input type="text" class="form-input" id="modal_location" readonly>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="password" class="form-label">Password *</label>
+                        <input type="password" class="form-input" id="password" name="password" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="role" class="form-label">Role *</label>
+                            <select class="form-select" id="role" name="role" required>
+                                <option value="user">User</option>
+                                <option value="admin">Admin</option>
+                                <option value="manager">Manager</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="status" class="form-label">Status *</label>
+                            <select class="form-select" id="status" name="status" required>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                                <option value="pending">Pending</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('approveModal')">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmApprove">
+                        <i class="bi bi-check-circle"></i> Approve User
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Update Status Modal -->
+    <div class="modal" id="updateStatusModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5>Update User Status</h5>
+                <span class="close" onclick="closeModal('updateStatusModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="updateStatusForm">
+                    <input type="hidden" id="status_user_id" name="user_id">
+                    
+                    <div class="form-group">
+                        <label class="form-label">Name</label>
+                        <input type="text" class="form-input" id="status_modal_name" readonly>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Address</label>
+                        <input type="text" class="form-input" id="status_modal_address" readonly>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Mobile 1</label>
+                            <input type="text" class="form-input" id="status_modal_mobile1" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Mobile 2</label>
+                            <input type="text" class="form-input" id="status_modal_mobile2" readonly>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="new_status" class="form-label">Update Status *</label>
+                        <select class="form-select" id="new_status" name="new_status" required>
+                            <option value="">Select Status</option>
+                            <option value="viewed">Viewed</option>
+                            <option value="on hold">On Hold</option>
+                            <option value="pending">Pending</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                    </div>
+                </form>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('updateStatusModal')">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmStatusUpdate">
+                        <i class="bi bi-pencil-square"></i> Update Status
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Location Modal -->
+    <div class="modal" id="locationModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5>User Location</h5>
+                <span class="close" onclick="closeModal('locationModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="mapContainer" style="height: 400px; background-color: #f5f5f5; display: flex; align-items: center; justify-content: center;">
+                    <p>Loading location...</p>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-primary" onclick="closeModal('locationModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal" id="successModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5>Success</h5>
+                <span class="close" onclick="closeModal('successModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div style="text-align: center;">
+                    <i class="bi bi-check-circle-fill" style="font-size: 3rem; color: var(--success);"></i>
+                    <h4 id="successMessage" style="margin-top: 1rem;">Operation completed successfully!</h4>
+                    <p id="successDetails"></p>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-success" onclick="closeModal('successModal')">Continue</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let searchTimeout;
+        let allRows = [];
+
+        // Modal functions
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modals = ['approveModal', 'updateStatusModal', 'locationModal', 'successModal'];
+            modals.forEach(modalId => {
+                const modal = document.getElementById(modalId);
+                if (event.target === modal) {
+                    closeModal(modalId);
+                }
+            });
+        }
+
+        // Real-time search and filter function
+        function performSearch() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+            const statusFilter = document.getElementById('statusFilter').value.toLowerCase().trim();
+            const tbody = document.getElementById('usersTableBody');
+            const rows = tbody.querySelectorAll('tr:not(#noResultsRow)');
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const name = row.getAttribute('data-name') || '';
+                const email = row.getAttribute('data-email') || '';
+                const loginId = row.getAttribute('data-login-id') || '';
+                const status = row.getAttribute('data-status') || '';
+
+                // Check search term match
+                const searchMatch = !searchTerm || 
+                    name.includes(searchTerm) || 
+                    email.includes(searchTerm) || 
+                    loginId.includes(searchTerm);
+
+                // Check status filter match
+                const statusMatch = !statusFilter || status === statusFilter;
+
+                // Show/hide row based on matches
+                if (searchMatch && statusMatch) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            // Handle "no results" message
+            let noResultsRow = document.getElementById('noResultsRow');
+            if (visibleCount === 0 && rows.length > 0) {
+                if (!noResultsRow) {
+                    noResultsRow = document.createElement('tr');
+                    noResultsRow.id = 'noResultsRow';
+                    noResultsRow.innerHTML = '<td colspan="13" class="empty-state">No matching records found.</td>';
+                    tbody.appendChild(noResultsRow);
+                }
+                noResultsRow.style.display = '';
+            } else if (noResultsRow) {
+                noResultsRow.style.display = 'none';
+            }
+        }
+
+        // Debounced search function
+        function debouncedSearch() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(performSearch, 300);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Store all rows for filtering
+            const tbody = document.getElementById('usersTableBody');
+            allRows = Array.from(tbody.querySelectorAll('tr:not(#noResultsRow)'));
+
+            // Add event listeners for search and filter
+            document.getElementById('searchInput').addEventListener('input', debouncedSearch);
+            document.getElementById('statusFilter').addEventListener('change', performSearch);
+
+            // Set up approval modal
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.approve-btn')) {
+                    const btn = e.target.closest('.approve-btn');
+                    const userId = btn.getAttribute('data-user-id');
+                    const loginId = btn.getAttribute('data-login-id');
+                    const name = btn.getAttribute('data-name');
+                    const mobile = btn.getAttribute('data-mobile');
+                    const city = btn.getAttribute('data-city');
+                    const state = btn.getAttribute('data-state');
+                    const status = btn.getAttribute('data-status');
+
+                    document.getElementById('pending_id').value = userId;
+                    document.getElementById('approve_login_id').value = loginId; // This is correct
+                    document.getElementById('modal_name').value = name;
+                    document.getElementById('modal_mobile').value = mobile;
+                    document.getElementById('modal_location').value = `${city}, ${state}`;
+                    document.getElementById('status').value = status.toLowerCase();
+
+                    openModal('approveModal');
+                }
+            });
+
+
+            // Set up update status modal
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.update-status-btn')) {
+                    const btn = e.target.closest('.update-status-btn');
+                    const userId = btn.getAttribute('data-user-id');
+                    const name = btn.getAttribute('data-name');
+                    const mobile1 = btn.getAttribute('data-mobile');
+                    const mobile2 = btn.getAttribute('data-mobile2') || '';
+                    const address = btn.getAttribute('data-address');
+                    const currentStatus = btn.getAttribute('data-current-status');
+
+                    document.getElementById('status_user_id').value = userId;
+                    document.getElementById('status_modal_name').value = name;
+                    document.getElementById('status_modal_address').value = address;
+                    document.getElementById('status_modal_mobile1').value = mobile1;
+                    document.getElementById('status_modal_mobile2').value = mobile2;
+                    document.getElementById('new_status').value = currentStatus;
+                    openModal('updateStatusModal');
+                }
+            });
+
+            // Handle the approval
+            document.getElementById('confirmApprove').addEventListener('click', function() {
+                const formData = new FormData(document.getElementById('approveForm'));
+                
+                fetch("{{ url_for('geasy_bp.approve_pending_user') }}", {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if(data.success) {
+                        closeModal('approveModal');
+                        document.getElementById('successMessage').textContent = 'User Approved Successfully!';
+                        document.getElementById('successDetails').innerHTML = `Login ID: <strong>${data.login_id}</strong>`;
+                        openModal('successModal');
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('An error occurred: ' + error);
+                });
+            });
+
+            // Handle status update
+            document.getElementById('confirmStatusUpdate').addEventListener('click', function() {
+                const formData = new FormData(document.getElementById('updateStatusForm'));
+                const userId = formData.get('user_id');
+                const newStatus = formData.get('new_status');
+                
+                fetch("{{ url_for('geasy_bp.update_user_status') }}", {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if(data.success) {
+                        closeModal('updateStatusModal');
+                        
+                        // Update the row in the table without reloading
+                        const rows = document.querySelectorAll('tr[data-name]');
+                        rows.forEach(row => {
+                            const btn = row.querySelector('.update-status-btn');
+                            if (btn && btn.getAttribute('data-user-id') === userId) {
+                                // Update the remark column (10th column, index 9)
+                                const remarkCell = row.cells[9];
+                                if (remarkCell) {
+                                    remarkCell.textContent = newStatus;
+                                }
+                                
+                                // Update the data attributes
+                                row.setAttribute('data-status', newStatus.toLowerCase());
+                                btn.setAttribute('data-current-status', newStatus);
+                            }
+                        });
+                        
+                        document.getElementById('successMessage').textContent = 'Status Updated Successfully!';
+                        document.getElementById('successDetails').innerHTML = `New Status: <strong>${data.new_status}</strong>`;
+                        openModal('successModal');
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('An error occurred: ' + error);
+                });
+            });
+
+            // Set up location modal
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.view-location-btn')) {
+                    const btn = e.target.closest('.view-location-btn');
+                    const userId = btn.getAttribute('data-user-id');
+                    document.getElementById('mapContainer').innerHTML = '<p>Loading location...</p>';
+                    
+                    fetch("{{ url_for('geasy_bp.view_location', user_id=0) }}".replace('0', userId))
+                    .then(response => response.json())
+                    .then(data => {
+                        if(data.success) {
+                            const location = data.location;
+                            if(location) {
+                                const [lat, lng] = location.split(',');
+                                document.getElementById('mapContainer').innerHTML = `
+                                    <iframe
+                                        width="100%"
+                                        height="400"
+                                        frameborder="0"
+                                        scrolling="no"
+                                        marginheight="0"
+                                        marginwidth="0"
+                                        src="https://maps.google.com/maps?q=${lat},${lng}&z=15&output=embed">
+                                    </iframe>
+                                `;
+                            } else {
+                                document.getElementById('mapContainer').innerHTML = '<p style="color: var(--danger);">Location coordinates not available</p>';
+                            }
+                        } else {
+                            document.getElementById('mapContainer').innerHTML = `<p style="color: var(--danger);">${data.message}</p>`;
+                        }
+                    });
+                    openModal('locationModal');
+                }
+            });
+
+            // When success modal is closed, reload only if it was an approval (not status update)
+            document.getElementById('successModal').addEventListener('click', function(e) {
+                if (e.target.textContent === 'Continue') {
+                    const message = document.getElementById('successMessage').textContent;
+                    if (message.includes('Approved')) {
+                        window.location.reload();
+                    } else {
+                        closeModal('successModal');
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+{% endblock %}

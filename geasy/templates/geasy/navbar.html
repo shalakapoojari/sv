@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}G-Easy Admin{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='geasy/css/navbar.css') }}">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar">
+        <a href="{{ url_for('geasy_bp.admin_dashboard') }}" class="logo">G-EasyRecovery</a>
+        <ul class="nav-links">
+            <li><a href="{{ url_for('geasy_bp.admin_dashboard') }}">Dashboard</a></li>
+
+            <li>
+                <a href="#">App Users</a>
+                <ul class="submenu">
+                    <li><a href="{{ url_for('geasy_bp.manage_requests') }}">Manage Requests</a></li>
+                    <li><a href="{{ url_for('geasy_bp.manage_employees') }}">Total Employees</a></li>
+                </ul>
+            </li>
+
+            <li>
+                <a href="#">Reports</a>
+                <ul class="submenu">
+                    <li><a href="{{ url_for('geasy_bp.monthly_recharge') }}">Monthly Recharge</a></li>
+                    <li><a href="{{ url_for('geasy_bp.user_app_search') }}">User Search Report</a></li>
+                    <li><a href="{{ url_for('geasy_bp.report_by_number') }}">Car Search Report</a></li>
+                    <li><a href="{{ url_for('geasy_bp.report_by_number') }}">Search by Number</a></li>
+                </ul>
+            </li>
+
+            <li>
+                <a href="#">Listings</a>
+                <ul class="submenu">
+                    <li><a href="{{ url_for('geasy_bp.running_repulse') }}">Running Repo List</a></li>
+                    <li><a href="{{ url_for('geasy_bp.update_list_heading') }}">Update List Headings</a></li>
+                    <li><a href="{{ url_for('geasy_bp.download_general') }}">Download</a></li>
+                    <li><a href="{{ url_for('geasy_bp.add_new_xcs') }}">Add New Excel</a></li>
+                </ul>
+            </li>
+
+            <li><a href="{{ url_for('geasy_bp.settings') }}">Info</a></li>
+            <li><a href="{{ url_for('geasy_bp.logout') }}">Logout</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flashes">
+              {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>
