@@ -1,3 +1,5 @@
+import calendar
+from datetime import datetime
 from flask import Blueprint, flash, jsonify, render_template, request, redirect, url_for
 import pymysql
 from flask import session
@@ -150,7 +152,7 @@ def approve_pending_user():
             pending["location"],
             pending.get("machine_id", ""),
             "active",
-            ""
+            pending.get("address", "")
         ))
 
         # Delete from pending_users using ID
@@ -245,7 +247,7 @@ def manage_employees_data():
     db = get_db_connection()
     cursor = db.cursor()
     query = """
-        SELECT id, login_id, name, password, mobile, mobile2, status 
+        SELECT id, login_id, name, password, mobile, mobile2, status, address,
         FROM users
         WHERE name LIKE %s OR login_id LIKE %s
     """
@@ -315,6 +317,7 @@ def delete_employee(user_id):
     conn.close()
     return redirect(url_for("geasy_bp.manage_employees"))
 
+
 #REPORTS ROUTES
 @geasy_bp.route('/reports')
 def reports():
@@ -325,13 +328,161 @@ def reports():
 def monthly_recharge():
     return "Monthly Recharge Report"
 
-@geasy_bp.route("/reports/user-app-search")
-def user_app_search():
-    return "User App Search Report"
 
-@geasy_bp.route("/reports/number-search")
+@geasy_bp.route("/reports/user-app-search", methods=["GET", "POST"])
+def user_app_search():
+    conn = get_db_connection()
+    cursor = conn.cursor()  # Return results as dicts
+
+    # Populate user dropdown
+    cursor.execute("SELECT login_id, name, city, state FROM users ORDER BY login_id")
+    users = cursor.fetchall()
+
+    report = None
+    selected_user = None
+    selected_date = None
+
+    if request.method == "POST":
+        emp_id = request.form["emp_id"]
+        search_date = request.form["search_date"]
+        entire_month = request.form.get("entire_month")
+
+        selected_user = emp_id
+        selected_date = search_date
+
+        if entire_month:
+            query = """
+                SELECT DATE(searched_at) AS search_day,
+                       GROUP_CONCAT(chasis_no ORDER BY searched_at SEPARATOR ', ') AS chasis_no
+                FROM car_search_logs
+                WHERE emp_id = %s AND MONTH(searched_at) = MONTH(%s) AND YEAR(searched_at) = YEAR(%s)
+                GROUP BY DATE(searched_at)
+                ORDER BY search_day DESC
+            """
+            cursor.execute(query, (emp_id, search_date, search_date))
+        else:
+            query = """
+                SELECT DATE(searched_at) AS search_day,
+                       GROUP_CONCAT(chasis_no ORDER BY searched_at SEPARATOR ', ') AS chasis_no
+                FROM car_search_logs
+                WHERE emp_id = %s AND DATE(searched_at) = %s
+                GROUP BY DATE(searched_at)
+            """
+            cursor.execute(query, (emp_id, search_date))
+
+        report = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        "geasy/user_app_search.html",
+        users=users,
+        report=report,
+        selected_user=selected_user,
+        selected_date=selected_date
+    )
+
+@geasy_bp.route("/reports/all-users-search", methods=["GET", "POST"])
+def all_users_search():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    report = None
+    selected_date = None
+    entire_month = False
+
+    if request.method == "POST":
+        search_date = request.form["search_date"]
+        entire_month = request.form.get("entire_month")
+        selected_date = search_date
+
+        if entire_month:
+            query = """
+                SELECT csl.emp_id,
+                    csl.emp_name,
+                    DATE(csl.searched_at) AS search_day,
+                    GROUP_CONCAT(csl.chasis_no ORDER BY csl.searched_at SEPARATOR ', ') AS chasis_list,
+                    MIN(csl.searched_at) AS first_search_time
+                FROM car_search_logs csl
+                WHERE MONTH(csl.searched_at) = MONTH(%s)
+                AND YEAR(csl.searched_at) = YEAR(%s)
+                GROUP BY csl.emp_id, csl.emp_name, DATE(csl.searched_at)
+                HAVING chasis_list IS NOT NULL AND chasis_list != ''
+                ORDER BY search_day DESC, csl.emp_id
+            """
+            cursor.execute(query, (search_date, search_date))
+
+        else:
+            query = """
+                SELECT csl.emp_id,
+                    csl.emp_name,
+                    DATE(csl.searched_at) AS search_day,
+                    GROUP_CONCAT(csl.chasis_no ORDER BY csl.searched_at SEPARATOR ', ') AS chasis_list,
+                    MIN(csl.searched_at) AS first_search_time
+                FROM car_search_logs csl
+                WHERE DATE(csl.searched_at) = %s
+                GROUP BY csl.emp_id, csl.emp_name, DATE(csl.searched_at)
+                ORDER BY first_search_time DESC
+            """
+            cursor.execute(query, (search_date,))
+
+
+        report = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template("geasy/all_users_search.html", report=report, selected_date=selected_date, entire_month=entire_month)
+
+@geasy_bp.route("/reports/number-search", methods=["GET", "POST"])
 def report_by_number():
-    return "Search by Number Report"
+    report = []
+    selected_date = None
+    search_number = None
+    month = year = ""
+
+    if request.method == "POST":
+        month = request.form.get("search_month")
+        year = request.form.get("search_year")
+        search_number = request.form.get("search_number", "").strip().upper()
+
+        if not (month and year and search_number):
+            flash("All fields are required.", "danger")
+            return render_template("geasy/search_by_number.html", report=[], selected_date=None)
+
+        if len(search_number) < 6:
+            flash("Chassis number must be at least 6 characters.", "danger")
+            return render_template("geasy/search_by_number.html", report=[], selected_date=None)
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        query = """
+            SELECT 
+                e.emp_id AS login_id,
+                e.name AS emp_name,
+                DATE(csl.searched_at) AS search_date
+            FROM car_search_logs csl
+            JOIN employees e ON e.emp_id = csl.emp_id
+            WHERE UPPER(csl.chasis_no) LIKE %s
+              AND MONTH(csl.searched_at) = %s
+              AND YEAR(csl.searched_at) = %s
+            ORDER BY csl.searched_at DESC
+        """
+        search_like = f"%{search_number}%"
+        print("Running query with:", search_like, month, year)
+        cursor.execute(query, (search_like, int(month), int(year)))
+        report = cursor.fetchall()
+        print("Report rows:", report)  # ✅ Check this
+        selected_date = f"{month}/{year}"
+
+    return render_template("geasy/search_by_number.html",
+                           report=report,
+                           selected_date=selected_date,
+                           search_number=search_number,
+                           search_month=month,
+                           search_year=year)
 
 
 #LISTINGS ROUTES

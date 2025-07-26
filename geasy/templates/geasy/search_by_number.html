@@ -1,0 +1,77 @@
+{% extends 'geasy/navbar.html' %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Search Report by Chassis Number</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='geasy/css/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h2>Search Report by Chassis Number</h2>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+            <label>Month:
+                <select name="search_month" required>
+                    <option value="">-- Select Month --</option>
+                    {% for i in range(1, 13) %}
+                        <option value="{{ i }}" {% if request.form.get('search_month') == i|string %}selected{% endif %}>{{ i }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <label>Year:
+                <select name="search_year" required>
+                    <option value="">-- Select Year --</option>
+                    {% for y in range(2023, 2031) %}
+                        <option value="{{ y }}" {% if request.form.get('search_year') == y|string %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <label>Chassis Number:
+                <input type="text" name="search_number" minlength="6" required value="{{ search_number or '' }}">
+            </label>
+
+            <button type="submit">Search</button>
+        </form>
+
+        {% if report %}
+            <h3>Results for chassis "{{ search_number }}" in {{ selected_date }}</h3>
+            <table border="1" cellpadding="5" cellspacing="0">
+                <tr>
+                    <th>#</th>
+                    <th>Login ID</th>
+                    <th>Employee Name</th>
+                    <th>Date Accessed</th>
+                </tr>
+                <tbody>
+                {% for row in report %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ row.login_id }}</td>
+                    <td>{{ row.emp_name }}</td>
+                    <td>{{ row.search_date }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+
+            </table>
+        {% elif selected_date %}
+            <p>No results found for chassis {{ search_number }} in {{ selected_date }}.</p>
+        {% endif %}
+    </div>
+</body>
+</html>
+
+{% endblock %}

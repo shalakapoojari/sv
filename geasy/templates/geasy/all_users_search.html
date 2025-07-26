@@ -1,0 +1,49 @@
+{% extends 'geasy/navbar.html' %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='geasy/css/styles.css') }}">
+<title>All users app search report</title>
+<body>
+<div class="container">
+    <h2>All Users App Search Report</h2>  
+    
+    <form method="POST">
+    <label for="search_date">Search Date:</label>
+    <input type="date" name="search_date" required>
+
+    <label>
+        <input type="checkbox" name="entire_month"> Entire Month?
+    </label>
+
+    <button type="submit">Search</button>
+</form>
+
+{% if report %}
+    <table>
+        <thead>
+            <tr>
+                <th>Employee ID</th>
+                <th>Name</th>
+                <th>Search Date</th>
+                <th>Chassis Numbers</th>
+                <th>First Search Time</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in report %}
+            <tr>
+                <td>{{ row.emp_id }}</td>
+                <td>{{ row.emp_name }}</td>
+                <td>{{ row.search_day }}</td>
+                <td>{{ row.chasis_list }}</td>
+                <td>{{ row.first_search_time }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% elif selected_date %}
+    <p>No searches found for {{ selected_date }}.</p>
+{% endif %}
+
+{% endblock %}

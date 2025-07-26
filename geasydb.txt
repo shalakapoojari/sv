@@ -20,3 +20,24 @@ CREATE TABLE users (
     state VARCHAR(50),
     status VARCHAR(20)
 );
+
+CREATE TABLE IF NOT EXISTS search_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    emp_id VARCHAR(100),
+    email VARCHAR(100),
+    action VARCHAR(255),
+    device VARCHAR(255),
+    location VARCHAR(255),
+    timestamp DATETIME
+);
+
+CREATE TABLE IF NOT EXISTS car_search_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    emp_id VARCHAR(100) NOT NULL,
+    emp_name VARCHAR(100) NOT NULL,
+    chasis_no VARCHAR(100) NOT NULL,
+    searched_at DATETIME NOT NULL,
+    location VARCHAR(255) NOT NULL,
+    device_info VARCHAR(255) NOT NULL,
+    suspicious TINYINT DEFAULT 0
+);

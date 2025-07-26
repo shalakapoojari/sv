@@ -1,0 +1,62 @@
+{% extends 'geasy/navbar.html' %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='geasy/css/styles.css') }}">
+<title>User App Search Report Employees</title>
+
+<head>
+    <meta charset="UTF-8">
+    <title>User App Search Report</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='geasy/css/styles.css') }}">
+</head>
+<body>
+<div class="container">
+    <h2>User App Search Report</h2>
+
+    <form method="POST">
+        <label for="emp_id">Select User:</label>
+        <select name="emp_id" id="emp_id" required>
+            {% for user in users %}
+                <option value="{{ user.login_id}}">
+                    {{ user.login_id }} - {{ user.name }} - {{ user.city}}, {{ user.state }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <label for="search_type">Search:</label>
+        <input type="text" name="search_query" id="search_query" placeholder="Enter name or login id">
+
+        <label for="search_date">Select Date:</label>
+        <input type="date" name="search_date" id="search_date" required>
+
+        <input type="checkbox" name="entire_month" id="entire_month">
+        <label for="entire_month">Entire Month</label>
+
+        <button type="submit">View Report</button>
+    </form>
+
+    {% if report %}
+        <h3>Search Results for {{ selected_user }} on {{ selected_date }}</h3>
+        <table border="1">
+            <tr>
+                <th>S No</th>
+                <th>Date</th>
+                <th>Work</th>
+            </tr>
+            {% for entry in report %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ entry.search_day }}</td>
+                <td>{{ entry.chasis_no }}</td>
+            </tr>
+
+            {% endfor %}
+        </table>
+    {% elif report is not none %}
+        <p>No searches found for this user on that day.</p>
+    {% endif %}
+</div>
+</body>
+</html>
+{% endblock %}
