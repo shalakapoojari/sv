@@ -1,49 +1,56 @@
 {% extends 'geasy/navbar.html' %}
-
 {% block content %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="{{ url_for('static', filename='geasy/css/styles.css') }}">
-<title>All users app search report</title>
-<body>
-<div class="container">
-    <h2>All Users App Search Report</h2>  
-    
-    <form method="POST">
-    <label for="search_date">Search Date:</label>
-    <input type="date" name="search_date" required>
+<title>All Users App Search Report</title>
 
-    <label>
-        <input type="checkbox" name="entire_month"> Entire Month?
-    </label>
+<div class="page-container">
+    <div class="page-header">
+        <h1>All Users App Search Report</h1>
+    </div>
 
-    <button type="submit">Search</button>
-</form>
+    <div class="search-bar">
+        <form method="POST" class="search-form">
+            <input type="date" name="search_date" class="form-control" required>
+            <label class="checkbox-wrapper">
+                <input type="checkbox" name="entire_month">
+                <span>Entire Month</span>
+            </label>
+            <button type="submit" class="btn btn-primary">Generate Report</button>
+        </form>
+    </div>
 
-{% if report %}
-    <table>
-        <thead>
-            <tr>
-                <th>Employee ID</th>
-                <th>Name</th>
-                <th>Search Date</th>
-                <th>Chassis Numbers</th>
-                <th>First Search Time</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in report %}
-            <tr>
-                <td>{{ row.emp_id }}</td>
-                <td>{{ row.emp_name }}</td>
-                <td>{{ row.search_day }}</td>
-                <td>{{ row.chasis_list }}</td>
-                <td>{{ row.first_search_time }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-{% elif selected_date %}
-    <p>No searches found for {{ selected_date }}.</p>
-{% endif %}
-
+    {% if report %}
+        <div class="section-title">
+            Search Report for {{ selected_date }}
+            <span class="record-count">{{ report|length }} users</span>
+        </div>
+        <div class="table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Employee ID</th>
+                        <th>Name</th>
+                        <th>Search Date</th>
+                        <th>Chassis Numbers</th>
+                        <th>First Search Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in report %}
+                        <tr>
+                            <td>{{ row.emp_id }}</td>
+                            <td>{{ row.emp_name }}</td>
+                            <td>{{ row.search_day }}</td>
+                            <td class="chassis-cell">{{ row.chasis_list }}</td>
+                            <td>{{ row.first_search_time }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% elif selected_date %}
+        <div class="no-results">No searches found for {{ selected_date }}.</div>
+    {% endif %}
+</div>
 {% endblock %}

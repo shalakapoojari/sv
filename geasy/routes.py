@@ -68,17 +68,17 @@ def admin_dashboard():
 
     return render_template("geasy/g_dashboard.html")
 
-
-
 @geasy_bp.route('/logout')
 def logout():
     session.clear()   
     return redirect(url_for("geasy_bp.admin_login"))
 
+
+
+
 #DASHBOARD ROUTES
 
-#DASHBOARD - APP USERS
-
+#APP USERS
 @geasy_bp.route('/manage_users')
 def manage_users():
     # Placeholder for user management logic
@@ -110,6 +110,8 @@ def manage_requests():
 
     return render_template("geasy/approve_requests.html", users=users, search=search, filter_status=filter_status)
 
+# Approve Pending User
+from geopy.geocoders import Nominatim
 @geasy_bp.route("/manage/requests/approve", methods=["POST"])
 def approve_pending_user():
     pending_id = request.form.get("pending_id")
@@ -125,12 +127,34 @@ def approve_pending_user():
     cursor = conn.cursor(pymysql.cursors.DictCursor)
 
     try:
-        # Fetch pending user by ID
+        # Fetch pending user
         cursor.execute("SELECT * FROM pending_users WHERE id = %s", (pending_id,))
         pending = cursor.fetchone()
 
         if not pending:
             return jsonify({"success": False, "message": "Pending user not found"}), 404
+
+        # Reverse geocode coordinates to short address
+        address = ""
+        try:
+            location_str = pending.get("location", "")
+            if location_str:
+                lat, lon = map(float, location_str.split(","))
+                geolocator = Nominatim(user_agent="geasy-approver")
+                location = geolocator.reverse((lat, lon), language='en')
+                if location and location.raw and 'address' in location.raw:
+                    addr = location.raw['address']
+                    # Pick the most relevant short field
+                    address = addr.get('neighbourhood') or \
+                              addr.get('suburb') or \
+                              addr.get('road') or \
+                              addr.get('city_district') or \
+                              addr.get('village') or \
+                              addr.get('town') or \
+                              addr.get('city') or ''
+        except Exception as geo_err:
+            print(f"Geocoding error: {geo_err}")
+            address = ""
 
         # Insert into users table
         cursor.execute("""
@@ -152,14 +176,19 @@ def approve_pending_user():
             pending["location"],
             pending.get("machine_id", ""),
             "active",
-            pending.get("address", "")
+            address
         ))
 
-        # Delete from pending_users using ID
+        # Delete approved user from pending_users
         cursor.execute("DELETE FROM pending_users WHERE id = %s", (pending_id,))
-
         conn.commit()
-        return jsonify({"success": True, "message": "User approved successfully", "login_id": login_id})
+
+        return jsonify({
+            "success": True,
+            "message": "User approved successfully",
+            "login_id": login_id,
+            "address": address
+        })
 
     except Exception as e:
         conn.rollback()
@@ -168,6 +197,7 @@ def approve_pending_user():
     finally:
         conn.close()
 
+#Feych Location of Pending User
 @geasy_bp.route("/manage/requests/location/<int:user_id>")
 def view_location(user_id):
     conn = get_db_connection()
@@ -181,6 +211,7 @@ def view_location(user_id):
     
     return jsonify({"success": False, "message": "Location not available"})
 
+# Update User Status
 @geasy_bp.route("/manage/requests/update-status", methods=["POST"])
 def update_user_status():
     user_id = request.form.get("user_id")
@@ -221,7 +252,9 @@ def update_user_status():
     finally:
         conn.close()
 
-#Employees Total
+#EMPLOYEES ROUTES
+
+# Manage Employees
 @geasy_bp.route('/manage/employees', methods=['GET'])
 def manage_employees():
     conn = get_db_connection()
@@ -235,7 +268,7 @@ def manage_employees():
     return render_template('geasy/employees.html', employees=employees)
 
 
-
+#Fill the employee data for the DataTable
 @geasy_bp.route("/manage/employees/data", methods=["POST"])
 def manage_employees_data():
     if not request.is_json:
@@ -262,6 +295,7 @@ def manage_employees_data():
     employees = [dict(zip(columns, row)) for row in rows]
     return jsonify(employees)
 
+#Editing details of employee
 @geasy_bp.route("/geasy/manage/employees/edit/<string:login_id>", methods=["GET", "POST"])
 def edit_employee(login_id):
     conn = get_db_connection()
@@ -307,7 +341,7 @@ def edit_employee(login_id):
 
     return render_template("geasy/edit_employee.html", user=user)
 
-
+# Delete Employee
 @geasy_bp.route("/manage/employee/delete/<string:user_id>", methods=["POST"])
 def delete_employee(user_id):
     conn = get_db_connection()
@@ -319,6 +353,7 @@ def delete_employee(user_id):
 
 
 #REPORTS ROUTES
+
 @geasy_bp.route('/reports')
 def reports():
     # Placeholder for reports logic
@@ -328,7 +363,7 @@ def reports():
 def monthly_recharge():
     return "Monthly Recharge Report"
 
-
+# User App Search Report- Selects a date and a particular employee shows the car they accessed on that date
 @geasy_bp.route("/reports/user-app-search", methods=["GET", "POST"])
 def user_app_search():
     conn = get_db_connection()
@@ -383,6 +418,8 @@ def user_app_search():
         selected_date=selected_date
     )
 
+
+# All Users Search Report - Selects a month & year and shows all users who accessed cars on that date
 @geasy_bp.route("/reports/all-users-search", methods=["GET", "POST"])
 def all_users_search():
     conn = get_db_connection()
@@ -435,6 +472,7 @@ def all_users_search():
 
     return render_template("geasy/all_users_search.html", report=report, selected_date=selected_date, entire_month=entire_month)
 
+# Search by Chassis Number Report - Selects a month & year and shows all users who searched for that number
 @geasy_bp.route("/reports/number-search", methods=["GET", "POST"])
 def report_by_number():
     report = []
@@ -485,6 +523,8 @@ def report_by_number():
                            search_year=year)
 
 
+
+
 #LISTINGS ROUTES
 
 @geasy_bp.route('/listings')
@@ -512,12 +552,15 @@ def mobile_add():
 def add_new_xcs():
     return "Add New XCS"
 
+
+
 #SETTINGS ROUTES
 
 @geasy_bp.route('/settings')
 def settings():
     # Placeholder for settings logic
     return render_template("geasy/settings.html")
+
 
 #LOCATION ROUTES
 

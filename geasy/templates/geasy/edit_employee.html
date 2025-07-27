@@ -4,68 +4,66 @@
     <meta charset="UTF-8">
     <title>Edit Employee Details</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='geasy/css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-
-<div class="container">
-    <h2>Edit Employee</h2>
-
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="alert alert-{{ category }}">{{ message }}</div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
-
-    <form method="POST">
-        <div class="form-row">
-            <label for="login_id">Login ID *</label>
-            <input type="text" id="login_id" name="login_id" value="{{ user.login_id }}">
+    <div class="page-container">
+        <div class="page-header">
+            <h1>Edit Employee Details</h1>
         </div>
 
-        <div class="form-row">
-            <label for="password">Password *</label>
-            <input type="text" id="password" name="password" value="{{ user.password or '' }}" required>
-        </div>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
 
-        <div class="form-row">
-            <label for="name">Full Name *</label>
-            <input type="text" id="name" name="name" value="{{ user.name or '' }}" required>
+        <div class="form-container">
+            <form method="POST" class="edit-form">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Login ID *</label>
+                        <input type="text" name="login_id" class="form-control" value="{{ user.login_id }}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Password *</label>
+                        <input type="text" name="password" class="form-control" value="{{ user.password or '' }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Full Name *</label>
+                        <input type="text" name="name" class="form-control" value="{{ user.name or '' }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Primary Mobile *</label>
+                        <input type="text" name="mobile" class="form-control" value="{{ user.mobile or '' }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Secondary Mobile</label>
+                        <input type="text" name="mobile2" class="form-control" value="{{ user.mobile2 or '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Status *</label>
+                        <select name="status" class="form-control" required>
+                            <option value="active" {% if user.status == 'active' %}selected{% endif %}>Active</option>
+                            <option value="inactive" {% if user.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Role *</label>
+                        <select name="role" class="form-control" required>
+                            <option value="Admin" {% if user.role == 'Admin' %}selected{% endif %}>Admin</option>
+                            <option value="User" {% if user.role == 'User' %}selected{% endif %}>User</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-success">Update Employee</button>
+                    <a href="{{ url_for('geasy_bp.manage_employees') }}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
         </div>
-
-        <div class="form-row">
-            <label for="mobile">Mobile *</label>
-            <input type="text" id="mobile" name="mobile" value="{{ user.mobile or '' }}" required>
-        </div>
-
-        <div class="form-row">
-            <label for="mobile2">Mobile 2</label>
-            <input type="text" id="mobile2" name="mobile2" value="{{ user.mobile2 or '' }}">
-        </div>
-        
-        <div class="form-row">
-            <label for="status">Status</label>
-            <select name="status" id="status" required>
-                <option value="active" {% if user.status == 'active' %}selected{% endif %}>Active</option>
-                <option value="inactive" {% if user.status == 'inactive' %}selected{% endif %}>Inactive</option>
-            </select>
-        </div>
-
-        <div class="form-row">
-            <label for="role">Role </label>
-            <select name="role" id="role" required>
-                <option value="Admin" {% if user.role == 'Admin' %}selected{% endif %}>Admin</option>
-                <option value="User" {% if user.role == 'User' %}selected{% endif %}>User</option>
-            </select>
-        </div>
-
-        <div class="form-actions" style="margin-top: 20px;">
-            <button type="submit" class="btn btn-success">Update</button>
-            <a href="{{ url_for('geasy_bp.manage_employees') }}" class="btn btn-secondary">Cancel</a>
-        </div>
-    </form>
-</div>
-
+    </div>
 </body>
 </html>
