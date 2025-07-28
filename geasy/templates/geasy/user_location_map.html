@@ -5,62 +5,34 @@
 <head>
     <title>User Location Tracking</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <style>
-        #map { 
-            height: 500px; 
-            width: 100%;
-            margin-top: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .form-container {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        .info-card {
-            margin-top: 20px;
-            padding: 15px;
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='geasy/css/styles.css') }}">
 </head>
 <body>
-    <div class="container">
-        <h2 class="mb-4">User Location Tracking</h2>
+    <div class="page-container">
         
         <!-- Search Form -->
-        <div class="form-container">
-            <form method="POST">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="user_id" class="font-weight-bold">Select User:</label>
-                            <select name="user_id" class="form-control" required>
-                                <option value="">-- Select User --</option>
-                                {% for emp_id, display_text in users %}
-                                    <option value="{{ emp_id }}" 
-                                        {% if selected_user == emp_id %}selected{% endif %}>
-                                        {{ display_text }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
+        <div class="search-bar">
+            <form method="POST" class="search-form">
+                <div class="filters-row">
+                    <div class="form-group">
+                        <label for="user_id">Select User:</label>
+                        <select name="user_id" class="form-control" required>
+                            <option value="">-- Select User --</option>
+                            {% for emp_id, display_text in users %}
+                            <option value="{{ emp_id }}" {% if selected_user == emp_id %}selected{% endif %}>
+                                {{ display_text }}
+                            </option>
+                            {% endfor %}
+                        </select>
                     </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="date" class="font-weight-bold">Select Date:</label>
-                            <input type="date" name="date" class="form-control" 
-                                   value="{{ selected_date }}" required>
-                        </div>
+                    <div class="form-group">
+                        <label for="date">Select Date:</label>
+                        <input type="date" name="date" class="form-control" value="{{ selected_date }}" required>
                     </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Track Location
+                    </button>
                 </div>
-                <button type="submit" class="btn btn-primary mt-2">
-                    <i class="fas fa-search"></i> Track Location
-                </button>
             </form>
         </div>
 
@@ -69,17 +41,35 @@
 
         <!-- Location Info -->
         {% if user_data %}
-        <div class="info-card">
-            <h4><i class="fas fa-user"></i> Employee Details</h4>
-            <hr>
-            <p><strong>ID:</strong> {{ user_data.emp_id }}</p>
-            <p><strong>Name:</strong> {{ user_data.name }}</p>
-            <p><strong>Last Activity:</strong> {{ user_data.timestamp }}</p>
-            <p><strong>Device:</strong> {{ user_data.device }}</p>
-            <p><strong>Coordinates:</strong> {{ user_data.coordinates[0]|round(6) }}, {{ user_data.coordinates[1]|round(6) }}</p>
+        <div class="form-container">
+            <div class="section-title">
+                <i class="fas fa-user"></i> Employee Details
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>ID:</label>
+                    <span>{{ user_data.emp_id }}</span>
+                </div>
+                <div class="form-group">
+                    <label>Name:</label>
+                    <span>{{ user_data.name }}</span>
+                </div>
+                <div class="form-group">
+                    <label>Last Activity:</label>
+                    <span>{{ user_data.timestamp }}</span>
+                </div>
+                <div class="form-group">
+                    <label>Device:</label>
+                    <span>{{ user_data.device }}</span>
+                </div>
+                <div class="form-group">
+                    <label>Coordinates:</label>
+                    <span>{{ user_data.coordinates[0]|round(6) }}, {{ user_data.coordinates[1]|round(6) }}</span>
+                </div>
+            </div>
         </div>
         {% elif request.method == 'POST' %}
-        <div class="alert alert-info mt-4">
+        <div class="alert alert-info">
             <i class="fas fa-info-circle"></i> No location data found for selected user and date.
         </div>
         {% endif %}
@@ -89,7 +79,6 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Font Awesome for icons -->
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
-    
     <script>
         // Initialize map with default view (Mumbai)
         const map = L.map('map').setView([19.0760, 72.8777], 12);
@@ -106,7 +95,7 @@
             {{ user_data.coordinates[0] }}, 
             {{ user_data.coordinates[1] }}
         ]).addTo(map);
-        
+
         // Custom icon (optional)
         const userIcon = L.icon({
             iconUrl: 'https://cdn0.iconfinder.com/data/icons/small-n-flat/24/678111-map-marker-512.png',

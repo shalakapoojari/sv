@@ -11,13 +11,14 @@
 
     <div class="search-bar">
         <form method="POST" class="search-form">
+            <p>Select User:</p>
             <select name="emp_id" class="form-control" required>
-                <option value="">Select User</option>
+                <option value="">----</option>
                 {% for user in users %}
                     <option value="{{ user.login_id}}">{{ user.login_id }} - {{ user.name }} - {{ user.city}}, {{ user.state }}</option>
                 {% endfor %}
             </select>
-            <input type="text" name="search_query" class="form-control" placeholder="Search name or login ID">
+            <p>Select Date:</p>
             <input type="date" name="search_date" class="form-control" required>
             <label class="checkbox-wrapper">
                 <input type="checkbox" name="entire_month">

@@ -13,6 +13,7 @@
     <div class="page-container">
 
         <div class="search-bar">
+            <p> Select Status:</p>
             <div class="filters-row">
                 <select id="statusFilter" class="form-control">
                     <option value="">All Statuses</option>
@@ -21,6 +22,7 @@
                     <option value="on hold" {% if filter_status == 'on hold' %}selected{% endif %}>On Hold</option>
                     <option value="rejected" {% if filter_status == 'rejected' %}selected{% endif %}>Rejected</option>
                 </select>
+                <p> Search by name:</p>
                 <input type="text" id="searchInput" value="{{ search }}" placeholder="Search by name, email or login ID" class="form-control">
                 <button class="btn btn-primary">Filters</button>
             </div>

@@ -529,7 +529,6 @@ def report_by_number():
 
 
 #LISTINGS ROUTES
-
 @geasy_bp.route('/listings')
 def listings():
     # Placeholder for listings logic
@@ -537,7 +536,18 @@ def listings():
 
 @geasy_bp.route("/listings/repulse")
 def running_repulse():
-    return "Running Repulse"
+    return render_template('geasy/running_repo_list.html')
+
+
+
+@geasy_bp.route('/running_repo_list')
+def running_repo_list():
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT id, sender_name, list_name, total_number FROM repo_list_table")
+    repo_data = cursor.fetchall()
+    return render_template('running_repo_list.html', repo_data=repo_data)
+
 
 @geasy_bp.route("/listings/update-heading")
 def update_list_heading():
@@ -553,7 +563,56 @@ def mobile_add():
 
 @geasy_bp.route("/listings/add-xcs")
 def add_new_xcs():
-    return "Add New XCS"
+    return render_template('geasy/add_new_excel.html')
+
+@geasy_bp.route('/upload_excel', methods=['POST'])
+def upload_excel():
+    list_name = request.form.get('list_name') or "Default List"
+    auto_arrange = 'auto_arrange' in request.form
+    file = request.files.get('excel_file')
+
+    if not file or file.filename == '':
+        flash('No file selected!', 'danger')
+        return redirect(request.referrer)
+
+    try:
+        import pandas as pd
+        df = pd.read_excel(file)
+        print("✅ Excel file loaded:")
+        print(df.head())
+
+        conn = get_db()
+        cursor = conn.cursor()
+
+        for index, row in df.iterrows():
+            print(f"⬇️ Row {index}:", row.to_dict())
+
+            cursor.execute("""
+                INSERT INTO uploaded_repo_data (
+                    list_name, ⁠ REG NO ⁠, ⁠ OWNER ⁠, ⁠ ChasisNO ⁠, ⁠ ENGNO ⁠, ⁠ MODEL ⁠, ⁠ FINANCER ⁠,
+                    ⁠ BKT ⁠, ⁠ Agr.No. ⁠, ⁠ Column 9 ⁠, `Manager                     
+        2`, ⁠ Manager 3 ⁠,
+                    ⁠ Column 11 ⁠, ⁠ Column 12 ⁠
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (
+                list_name,
+                row.get('REG NO'), row.get('OWNER'), row.get('ChasisNO'), row.get('ENGNO'),
+                row.get('MODEL'), row.get('FINANCER'), row.get('BKT'), row.get('Agr.No.'),
+                row.get('Column 9'), row.get('Manager 2'), row.get('Manager 3'),
+                row.get('Column 11'), row.get('Column 12')
+            ))
+
+        conn.commit()
+        print("✅ Commit successful")
+        flash('✅ Excel data uploaded successfully!', 'success')
+
+    except Exception as e:
+        conn.rollback()
+        print("❌ ERROR during upload:", str(e))
+        flash(f'❌ Error: {str(e)}', 'danger')
+
+    return redirect(request.referrer)
+
 
 
 
@@ -661,80 +720,68 @@ def user_location_tracking():
 
 
 # Working Team Tracking
-@geasy_bp.route("/location/working-team", methods=["GET"])
+@geasy_bp.route("/location/working-team")
 def working_team_tracking():
-    today = datetime.now().strftime('%Y-%m-%d')
+    # Parse date from query, fallback to today
+    date_str = request.args.get('date')
+    try:
+        selected_date = datetime.strptime(date_str, '%Y-%m-%d').date() if date_str else datetime.today().date()
+    except ValueError:
+        selected_date = datetime.today().date()
+
+    # DB connection
+    conn = get_db_connection()
+    cur = conn.cursor(pymysql.cursors.DictCursor)
+
+    # Fetch logs for selected date
+    cur.execute("""
+        SELECT emp_id, email, action, device, location, timestamp
+        FROM search_logs
+        WHERE DATE(timestamp) = %s
+        ORDER BY timestamp DESC
+    """, (selected_date,))
+    logs = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
     team_locations = []
     text_locations = []
-    conn = None
-    cursor = None  # Initialize cursor here
 
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
-        
-        query = """
-            SELECT sl.emp_id, u.name, u.email, sl.location, sl.device, sl.timestamp
-            FROM search_logs sl
-            JOIN users u ON u.login_id = sl.emp_id
-            INNER JOIN (
-                SELECT emp_id, MAX(timestamp) as latest_time
-                FROM search_logs
-                WHERE DATE(timestamp) = %s
-                  AND location IS NOT NULL
-                  AND location != 'N/A'
-                GROUP BY emp_id
-            ) sl2 ON sl.emp_id = sl2.emp_id AND sl.timestamp = sl2.latest_time
-            WHERE u.status = 'active'
-            ORDER BY u.name
-        """
-        cursor.execute(query, (today,))
-        
-        for row in cursor.fetchall():
-            location = row['location']
+    for log in logs:
+        loc_str = log['location']
+        name = log['email']  # fallback name if employee name not available
+
+        if loc_str and ',' in loc_str:
             try:
-                if "GPS:" in location:
-                    coords = location.split("GPS:")[1].strip()
-                    lat, lng = map(float, coords.split(","))
-                elif "," in location:
-                    parts = location.split(",")
-                    if len(parts) == 2:
-                        lat, lng = map(float, parts)
-                    else:
-                        raise ValueError("Invalid coordinate format")
-                else:
-                    text_locations.append({
-                        'emp_id': row['emp_id'],
-                        'name': row['name'],
-                        'location': location
-                    })
-                    continue
-                
+                lat_str, lng_str = loc_str.split(',')
+                lat = float(lat_str.strip())
+                lng = float(lng_str.strip())
+
                 team_locations.append({
-                    'emp_id': row['emp_id'],
-                    'name': row['name'],
-                    'email': row['email'],
+                    'name': name,
+                    'emp_id': log['emp_id'],
                     'lat': lat,
                     'lng': lng,
-                    'device': row['device'],
-                    'timestamp': row['timestamp'].strftime('%H:%M:%S')
+                    'timestamp': log['timestamp'].strftime('%Y-%m-%d %H:%M')
                 })
-                
-            except Exception as e:
-                print(f"Error processing location for {row['emp_id']}: {str(e)}")
-                continue
-                
-    except Exception as e:
-        print(f"Database error: {str(e)}")
-        flash("Error fetching location data", "error")
-    finally:
-        # Safely close resources
-        if cursor is not None:
-            cursor.close()
-        if conn is not None:
-            conn.close()
-    
-    return render_template("geasy/team_map.html",
-                         team_locations=team_locations,
-                         text_locations=text_locations,
-                         today=today)
+            except (ValueError, AttributeError):
+                # fallback to text list if lat/lng parse fails
+                text_locations.append({
+                    'name': name,
+                    'emp_id': log['emp_id'],
+                    'location': loc_str
+                })
+        elif loc_str:
+            text_locations.append({
+                'name': name,
+                'emp_id': log['emp_id'],
+                'location': loc_str
+            })
+
+    return render_template(
+        "geasy/team_map.html",
+        team_locations=team_locations,
+        text_locations=text_locations,
+        today=selected_date.strftime('%d %B %Y')
+    )

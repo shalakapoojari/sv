@@ -1,61 +1,49 @@
-{% extends 'base.html' %}
-
-{% block title %}Working Team Locations{% endblock %}
-
+{% extends 'geasy/navbar.html' %}
 {% block content %}
-<h2>Working Team Locations - {{ today }}</h2>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Team Locations - {{ today }}</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
-{% if team_locations %}
-<div id="map" style="height: 500px;"></div>
+    <link rel="stylesheet" href="{{ url_for('static', filename='geasy/css/styles.css') }}">
 
-<script>
-    const map = L.map('map').setView([20.5937, 78.9629], 5);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-    
-    {% for member in team_locations %}
-    L.marker([{{ member.lat }}, {{ member.lng }}])
-        .addTo(map)
-        .bindPopup(`
-            <b>{{ member.name }}</b><br>
-            ID: {{ member.emp_id }}<br>
-            Last seen: {{ member.timestamp }}
-        `);
-    {% endfor %}
-    
-    // Fit map to markers
-    const group = new L.featureGroup([
-        {% for member in team_locations %}
-        L.marker([{{ member.lat }}, {{ member.lng }}]){% if not loop.last %},{% endif %}
-        {% endfor %}
-    ]);
-    map.fitBounds(group.getBounds().pad(0.2));
-</script>
-{% endif %}
+</head>
+<body>
+    <div class="page-container">
+        <div class="page-header">
+            <h1>Team Locations - {{ today }}</h1>
+        </div>
 
-<div class="mt-4">
-    <h4>Location Summary</h4>
-    
-    {% if team_locations %}
-    <div class="alert alert-success">
-        <strong>{{ team_locations|length }} employees</strong> with GPS coordinates
+        <div id="map">Loading map...</div>
     </div>
-    {% endif %}
-    
-    {% if text_locations %}
-    <div class="alert alert-info">
-        <strong>{{ text_locations|length }} employees</strong> with text locations (not shown on map):
-        <ul class="mt-2">
-            {% for member in text_locations %}
-            <li>{{ member.name }} ({{ member.emp_id }}): {{ member.location }}</li>
-            {% endfor %}
-        </ul>
-    </div>
-    {% endif %}
-    
-    {% if not team_locations and not text_locations %}
-    <div class="alert alert-warning">
-        No location data available for today.
-    </div>
-    {% endif %}
-</div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const teamLocations = {{ team_locations|tojson }};
+        
+        if (teamLocations.length > 0) {
+            const map = L.map('map').setView([teamLocations[0].lat, teamLocations[0].lng], 5);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 18,
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            teamLocations.forEach(user => {
+                const marker = L.marker([user.lat, user.lng]).addTo(map);
+                marker.bindPopup(`
+                    <b>${user.name}</b><br>
+                    ID: ${user.emp_id}<br>
+                    Location: ${user.lat}, ${user.lng}<br>
+                    Last Seen: ${user.timestamp}
+                `);
+            });
+        } else {
+            document.getElementById('map').innerHTML = 'No GPS locations available for this day.';
+        }
+    </script>
+</body>
+</html>
 {% endblock %}

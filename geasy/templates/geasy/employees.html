@@ -9,6 +9,7 @@
 
     <div class="search-bar">
         <div class="filters-row">
+            <p> Enter Employee Login ID or Name to Search:</p>
             <input type="text" id="employee-search" class="form-control" placeholder="Search employees...">
             <button class="btn btn-primary">Search</button>
         </div>
@@ -28,12 +29,9 @@
                     <th>Name</th>
                     <th>Address</th>
                     <th>Mobile</th>
-                    <th>Recharge Date</th>
-                    <th>Recharge Expiry</th>
                     <th>Status</th>
                     <th>Type</th>
                     <th>Actions</th>
-                    <th>Recharge</th>
                 </tr>
             </thead>
             <tbody id="employee-table-body">
@@ -47,8 +45,6 @@
                             {{ emp.mobile }}
                             {% if emp.mobile2 %}<br><small>{{ emp.mobile2 }}</small>{% endif %}
                         </td>
-                        <td>{{ emp.recharge_date or '-' }}</td>
-                        <td>{{ emp.recharge_expiry or '-' }}</td>
                         <td>
                             <span class="status-badge status-{{ emp.status }}">{{ emp.status.title() }}</span>
                         </td>
@@ -69,13 +65,6 @@
                                     </button>
                                 </form>
                             </div>
-                        </td>
-                        <td>
-                            <button class="btn-sm btn-primary recharge-btn" 
-                                    data-employee-id="{{ emp.login_id }}"
-                                    data-employee-name="{{ emp.name }}">
-                                Recharge
-                            </button>
                         </td>
                     </tr>
                 {% else %}
