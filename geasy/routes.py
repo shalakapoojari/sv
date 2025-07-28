@@ -496,31 +496,34 @@ def report_by_number():
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        query = """
-            SELECT 
-                e.emp_id AS login_id,
-                e.name AS emp_name,
-                DATE(csl.searched_at) AS search_date
-            FROM car_search_logs csl
-            JOIN employees e ON e.emp_id = csl.emp_id
-            WHERE UPPER(csl.chasis_no) LIKE %s
-              AND MONTH(csl.searched_at) = %s
-              AND YEAR(csl.searched_at) = %s
-            ORDER BY csl.searched_at DESC
-        """
-        search_like = f"%{search_number}%"
-        print("Running query with:", search_like, month, year)
-        cursor.execute(query, (search_like, int(month), int(year)))
-        report = cursor.fetchall()
-        print("Report rows:", report)  # ✅ Check this
-        selected_date = f"{month}/{year}"
+        try:
+            query = """
+                SELECT 
+                    csl.emp_id AS login_id,
+                    csl.emp_name AS emp_name,
+                    DATE(csl.searched_at) AS search_date
+                FROM car_search_logs csl
+                WHERE UPPER(csl.chasis_no) LIKE %s
+                  AND MONTH(csl.searched_at) = %s
+                  AND YEAR(csl.searched_at) = %s
+                ORDER BY csl.searched_at DESC
+            """
+            search_like = f"%{search_number}%"
+            cursor.execute(query, (search_like, int(month), int(year)))
+            report = cursor.fetchall()
+            selected_date = f"{month}/{year}"
+        except Exception as e:
+            flash(f"Database error: {str(e)}", "danger")
+        finally:
+            cursor.close()
+            conn.close()
 
     return render_template("geasy/search_by_number.html",
-                           report=report,
-                           selected_date=selected_date,
-                           search_number=search_number,
-                           search_month=month,
-                           search_year=year)
+                         report=report,
+                         selected_date=selected_date,
+                         search_number=search_number,
+                         search_month=month,
+                         search_year=year)
 
 
 
@@ -562,11 +565,176 @@ def settings():
     return render_template("geasy/settings.html")
 
 
-#LOCATION ROUTES
+#LOCATION TRACKING ROUTES
 
 @geasy_bp.route('/location')
 def location():
-    # Placeholder for location logic
+    """Main location tracking dashboard"""
     return render_template("geasy/location.html")
 
-     
+# User Location Tracking
+@geasy_bp.route("/location/user-location", methods=["GET", "POST"])
+def user_location_tracking():
+    user_data = {}
+    selected_date = datetime.now().strftime('%Y-%m-%d')
+    selected_user = None
+    
+    if request.method == "POST":
+        selected_date = request.form.get("date")
+        selected_user = request.form.get("user_id")
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        query = """
+            SELECT sl.location, sl.device, sl.timestamp, u.name, u.email
+            FROM search_logs sl
+            JOIN users u ON u.login_id = sl.emp_id
+            WHERE sl.emp_id = %s 
+              AND DATE(sl.timestamp) = %s
+              AND sl.location IS NOT NULL
+              AND sl.location != 'N/A'
+            ORDER BY sl.timestamp DESC
+            LIMIT 1
+        """
+        cursor.execute(query, (selected_user, selected_date))
+        result = cursor.fetchone()
+        
+        if result:
+            # Convert to dictionary if needed
+            try:
+                # For dictionary cursors
+                loc = result['location'].replace("GPS:", "").replace(" ", "")
+                lat, lng = map(float, loc.split(','))
+                user_data = {
+                    'coordinates': [lat, lng],
+                    'device': result['device'],
+                    'timestamp': result['timestamp'].strftime('%Y-%m-%d %H:%M:%S'),
+                    'email': result['email'],
+                    'name': result['name'],
+                    'emp_id': selected_user
+                }
+            except (TypeError, KeyError):
+                # For tuple/numeric index cursors
+                loc = result[0].replace("GPS:", "").replace(" ", "")
+                lat, lng = map(float, loc.split(','))
+                user_data = {
+                    'coordinates': [lat, lng],
+                    'device': result[1],
+                    'timestamp': result[2].strftime('%Y-%m-%d %H:%M:%S'),
+                    'email': result[4],
+                    'name': result[3],
+                    'emp_id': selected_user
+                }
+        
+        cursor.close()
+        conn.close()
+    
+    # Get list of active users for dropdown
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT login_id, name 
+        FROM users 
+        WHERE status = 'active' 
+        ORDER BY login_id
+    """)
+    
+    # Handle both dictionary and tuple-style rows
+    users = []
+    for row in cursor.fetchall():
+        try:
+            # Try dictionary-style access first
+            emp_id = row['login_id']
+            name = row['name']
+        except (TypeError, KeyError):
+            # Fall back to tuple index access
+            emp_id = row[0]
+            name = row[1]
+        
+        users.append((emp_id, f"{emp_id} - {name}"))
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template("geasy/user_location_map.html", user_data=user_data, users=users, selected_date=selected_date, selected_user=selected_user)
+
+
+# Working Team Tracking
+@geasy_bp.route("/location/working-team", methods=["GET"])
+def working_team_tracking():
+    today = datetime.now().strftime('%Y-%m-%d')
+    team_locations = []
+    text_locations = []
+    conn = None
+    cursor = None  # Initialize cursor here
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        query = """
+            SELECT sl.emp_id, u.name, u.email, sl.location, sl.device, sl.timestamp
+            FROM search_logs sl
+            JOIN users u ON u.login_id = sl.emp_id
+            INNER JOIN (
+                SELECT emp_id, MAX(timestamp) as latest_time
+                FROM search_logs
+                WHERE DATE(timestamp) = %s
+                  AND location IS NOT NULL
+                  AND location != 'N/A'
+                GROUP BY emp_id
+            ) sl2 ON sl.emp_id = sl2.emp_id AND sl.timestamp = sl2.latest_time
+            WHERE u.status = 'active'
+            ORDER BY u.name
+        """
+        cursor.execute(query, (today,))
+        
+        for row in cursor.fetchall():
+            location = row['location']
+            try:
+                if "GPS:" in location:
+                    coords = location.split("GPS:")[1].strip()
+                    lat, lng = map(float, coords.split(","))
+                elif "," in location:
+                    parts = location.split(",")
+                    if len(parts) == 2:
+                        lat, lng = map(float, parts)
+                    else:
+                        raise ValueError("Invalid coordinate format")
+                else:
+                    text_locations.append({
+                        'emp_id': row['emp_id'],
+                        'name': row['name'],
+                        'location': location
+                    })
+                    continue
+                
+                team_locations.append({
+                    'emp_id': row['emp_id'],
+                    'name': row['name'],
+                    'email': row['email'],
+                    'lat': lat,
+                    'lng': lng,
+                    'device': row['device'],
+                    'timestamp': row['timestamp'].strftime('%H:%M:%S')
+                })
+                
+            except Exception as e:
+                print(f"Error processing location for {row['emp_id']}: {str(e)}")
+                continue
+                
+    except Exception as e:
+        print(f"Database error: {str(e)}")
+        flash("Error fetching location data", "error")
+    finally:
+        # Safely close resources
+        if cursor is not None:
+            cursor.close()
+        if conn is not None:
+            conn.close()
+    
+    return render_template("geasy/team_map.html",
+                         team_locations=team_locations,
+                         text_locations=text_locations,
+                         today=today)

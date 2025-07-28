@@ -16,6 +16,7 @@ class Config:
     MYSQL_USER = 'root'
     MYSQL_PASSWORD = 'Shalaka@25'
     MYSQL_DB = 'employee_portal'
+    GOOGLE_MAPS_API_KEY = "AIzaSyBybjvTnR_IT6gyJV-mtW6Ndi1VdEDQjTo"
 
     # Debugging email and key loading (for verification)
     print("Loaded MAIL_USERNAME:", os.getenv("MAIL_USERNAME"))
