@@ -1,0 +1,70 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+.pip/
+
+# Distribution / packaging
+build/
+develop-eggs/
+dist/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# PyBuilder
+target/
+
+# VS Code and JetBrains IDE files
+.vscode/
+.idea/
+
+# Flask instance and settings
+instance/
+.env
+*.env
+
+# macOS junk
+.DS_Store
+
+# Database and local logs
+*.sqlite3
+*.log
+
+# Ignore compiled files
+*.pyo
+*.pyd
+*.pyc
